@@ -17,6 +17,7 @@ body { margin:0; overflow:hidden; font-family:Arial; }
 </style>
 </head>
 <body>
+
 <div id="info">
 Click para empezar<br>
 WASD = mover<br>
@@ -24,19 +25,20 @@ Mouse = mirar<br>
 Click = disparar
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/PointerLockControls.js"></script>
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
+import { PointerLockControls } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/controls/PointerLockControls.js";
 
-<script>
 let scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
 let camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
-let renderer = new THREE.WebGLRenderer();
+let renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-let light = new THREE.HemisphereLight(0xffffff, 0x444444);
+// luz
+let light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
 scene.add(light);
 
 // suelo
@@ -46,12 +48,12 @@ let floor = new THREE.Mesh(floorGeo, floorMat);
 floor.rotation.x = -Math.PI/2;
 scene.add(floor);
 
-// controles FPS
-let controls = new THREE.PointerLockControls(camera, document.body);
+// controles
+let controls = new PointerLockControls(camera, document.body);
 document.body.addEventListener("click", () => controls.lock());
 scene.add(controls.getObject());
 
-// movimiento
+// teclas
 let keys = {};
 document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
 document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
@@ -60,12 +62,13 @@ document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 let targets = [];
 function crearObjetivo(x,z){
   let geo = new THREE.BoxGeometry(2,2,2);
-  let mat = new THREE.MeshStandardMaterial();
+  let mat = new THREE.MeshStandardMaterial({color:0xff4444});
   let cube = new THREE.Mesh(geo, mat);
   cube.position.set(x,1,z);
   scene.add(cube);
   targets.push(cube);
 }
+
 for(let i=0;i<15;i++){
   crearObjetivo(
     (Math.random()-0.5)*100,
@@ -78,14 +81,14 @@ let raycaster = new THREE.Raycaster();
 document.addEventListener("mousedown", () => {
   raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
   let hits = raycaster.intersectObjects(targets);
-  if(hits.length > 0){
+  if(hits.length){
     let obj = hits[0].object;
     scene.remove(obj);
     targets = targets.filter(t => t !== obj);
   }
 });
 
-// movimiento jugador
+// movimiento
 function move(){
   let speed = 0.15;
   if(keys["w"]) controls.moveForward(speed);
@@ -94,6 +97,7 @@ function move(){
   if(keys["d"]) controls.moveRight(speed);
 }
 
+// loop
 function animate(){
   requestAnimationFrame(animate);
   move();
@@ -101,11 +105,13 @@ function animate(){
 }
 animate();
 
+// resize
 addEventListener("resize", ()=>{
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
 </script>
+
 </body>
 </html>
