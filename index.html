@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mini Shooter 3D</title>
+<style>
+body { margin:0; overflow:hidden; font-family:Arial; }
+#info {
+  position:absolute;
+  top:10px;
+  left:10px;
+  background:rgba(0,0,0,0.5);
+  color:white;
+  padding:10px;
+  border-radius:8px;
+}
+</style>
+</head>
+<body>
+<div id="info">
+Click para empezar<br>
+WASD = mover<br>
+Mouse = mirar<br>
+Click = disparar
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/PointerLockControls.js"></script>
+
+<script>
+let scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+
+let camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer();
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+let light = new THREE.HemisphereLight(0xffffff, 0x444444);
+scene.add(light);
+
+// suelo
+let floorGeo = new THREE.PlaneGeometry(200,200);
+let floorMat = new THREE.MeshStandardMaterial({color:0x228b22});
+let floor = new THREE.Mesh(floorGeo, floorMat);
+floor.rotation.x = -Math.PI/2;
+scene.add(floor);
+
+// controles FPS
+let controls = new THREE.PointerLockControls(camera, document.body);
+document.body.addEventListener("click", () => controls.lock());
+scene.add(controls.getObject());
+
+// movimiento
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+// objetivos
+let targets = [];
+function crearObjetivo(x,z){
+  let geo = new THREE.BoxGeometry(2,2,2);
+  let mat = new THREE.MeshStandardMaterial();
+  let cube = new THREE.Mesh(geo, mat);
+  cube.position.set(x,1,z);
+  scene.add(cube);
+  targets.push(cube);
+}
+for(let i=0;i<15;i++){
+  crearObjetivo(
+    (Math.random()-0.5)*100,
+    (Math.random()-0.5)*100
+  );
+}
+
+// disparo
+let raycaster = new THREE.Raycaster();
+document.addEventListener("mousedown", () => {
+  raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+  let hits = raycaster.intersectObjects(targets);
+  if(hits.length > 0){
+    let obj = hits[0].object;
+    scene.remove(obj);
+    targets = targets.filter(t => t !== obj);
+  }
+});
+
+// movimiento jugador
+function move(){
+  let speed = 0.15;
+  if(keys["w"]) controls.moveForward(speed);
+  if(keys["s"]) controls.moveForward(-speed);
+  if(keys["a"]) controls.moveRight(-speed);
+  if(keys["d"]) controls.moveRight(speed);
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  move();
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
